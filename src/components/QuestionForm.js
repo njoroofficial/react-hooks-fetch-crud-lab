@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-function QuestionForm(props) {
+function QuestionForm({ onAddQuestion }) {
+  // State to manage form data with controlled inputs
   const [formData, setFormData] = useState({
     prompt: "",
     answer1: "",
@@ -10,6 +11,17 @@ function QuestionForm(props) {
     correctIndex: 0,
   });
 
+  // Track if component is mounted to prevent state updates after unmount
+  useEffect(() => {
+    let isMounted = true;
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Handle changes to form inputs
   function handleChange(event) {
     setFormData({
       ...formData,
@@ -17,9 +29,36 @@ function QuestionForm(props) {
     });
   }
 
+  // Handle form submission
   function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+
+    // Format the data according to API requirements
+    // The API expects an answers array, not individual answer fields
+    const questionData = {
+      prompt: formData.prompt,
+      answers: [
+        formData.answer1,
+        formData.answer2,
+        formData.answer3,
+        formData.answer4,
+      ],
+      correctIndex: parseInt(formData.correctIndex), // Convert to integer
+    };
+
+    // POST request to create a new question
+    fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(questionData), // Convert object to JSON string
+    })
+      .then((res) => res.json())
+      .then((newQuestion) => {
+        // Update the parent component's state with the new question
+        onAddQuestion(newQuestion);
+      });
   }
 
   return (
